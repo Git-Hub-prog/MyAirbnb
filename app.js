@@ -27,11 +27,17 @@ const userRouter = require("./routes/user");
 app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride("_method"));
 
-// const MONGO_URL = "mongodb://127.0.0.1:27017/wanderlust";  // ✅ first
+// const MONGO_URL = "mongodb://127.0.0.1:27017/wanderlust";  
 const dbURL = process.env.ATLASDB_URL;
+const sessionSecret = process.env.SECRET_KEY;
+const port = process.env.PORT || 8080;
 
 if (!dbURL) {
-    throw new Error("ATLASDB_URL is missing from .env");
+    throw new Error("ATLASDB_URL is missing from environment variables");
+}
+
+if (!sessionSecret) {
+    throw new Error("SECRET_KEY is missing from environment variables");
 }
 
 dns.setServers(["1.1.1.1", "8.8.8.8"]);
@@ -39,8 +45,8 @@ dns.setServers(["1.1.1.1", "8.8.8.8"]);
 main()
 .then(() => {
     console.log("connected to DB");
-    app.listen(8080, () => {
-        console.log("Server is running on port 8080");
+    app.listen(port, () => {
+        console.log(`Server is running on port ${port}`);
     });
 })
 .catch((err) => {
@@ -65,7 +71,7 @@ const store = MongoStore.create({
     dbName: "wanderlust",
     collectionName: "sessions",
     crypto: {
-        secret: process.env.SECRET_KEY,
+        secret: sessionSecret,
     },
     touchAfter: 24 * 3600,
 });
@@ -80,7 +86,7 @@ store.on("error", (err) => {
 
 const sessionOptions = {
     store,
-    secret: process.env.SECRET_KEY,
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: true,
     cookie:{
@@ -140,6 +146,7 @@ app.use((err, req, res, next) => {
     // res.status(statusCode).send(message);
     
 });
+
 
 
 
